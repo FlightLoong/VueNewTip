@@ -6,6 +6,8 @@ import 'element-ui/lib/theme-chalk/index.css'
 // 导入 Vue 组件库
 import ElementUI from 'element-ui'
 
+import '@/styles/index.less'
+
 Vue.config.productionTip = false
 
 Vue.use(ElementUI)
