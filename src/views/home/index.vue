@@ -1,15 +1,14 @@
 <template>
   <div>
-    <router-view></router-view>
+    Home Component
   </div>
 </template>
 
 <script>
 export default {
-  name: '',
+  name: 'AppHome',
   data () {
     return {
-      radio: '1'
     }
   }
 }

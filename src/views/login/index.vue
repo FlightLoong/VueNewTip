@@ -1,15 +1,14 @@
 <template>
   <div>
-    <router-view></router-view>
+    Login Component
   </div>
 </template>
 
 <script>
 export default {
-  name: '',
+  name: 'AppLogin',
   data () {
     return {
-      radio: '1'
     }
   }
 }
