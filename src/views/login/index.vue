@@ -54,6 +54,7 @@ export default {
         return this.captchaObj.verify()
       }
 
+      // 第一步：获取验证参数
       axios({
         method: 'get',
         url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
@@ -72,9 +73,28 @@ export default {
           this.captchaObj = captchaObj
           // 这里可以调用验证实例 captchaObj 的实例方法
           captchaObj.onReady(function () {
+            // 第二步：验证预判定，由客户端完成，实现初步预检测
             captchaObj.verify()
           }).onSuccess(function () {
-            console.log('验证成功了……')
+            // 第三步：核心验证过程
+            const {
+              geetest_challenge: challenge,
+              geetest_seccode: seccode,
+              geetest_validate: validate
+            } = captchaObj.getValidate()
+
+            // 第四步：调用获取短信验证码 (极验 API2) 接口，发送短信到手机
+            axios({
+              method: 'get',
+              url: `http://ttapi.research.itcast.cn/mp/v1_0/sms/codes/${mobile}`,
+              params: {
+                challenge,
+                seccode,
+                validate
+              }
+            }).then((res) => {
+              console.log(res.data)
+            })
           }).onError(function () {
             console.log('验证失败了……')
           })
