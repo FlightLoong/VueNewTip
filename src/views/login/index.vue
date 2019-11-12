@@ -18,7 +18,7 @@
             </el-col>
           </el-form-item>
           <el-form-item>
-            <el-button class="login" type="primary" @click="onSubmit">立即创建</el-button>
+            <el-button class="login" type="primary" @click="handleLogin">立即登录</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -42,8 +42,27 @@ export default {
     }
   },
   methods: {
-    onSubmit () {
-      console.log('submit!')
+    handleLogin () {
+      axios({
+        method: 'post',
+        url: `http://ttapi.research.itcast.cn/mp/v1_0/authorizations`,
+        data: this.form
+      })
+        .then(res => {
+          this.$message({
+            message: '登录成功',
+            type: 'success'
+          })
+
+          this.$router.push({
+            name: 'home'
+          })
+        })
+        .catch(err => {
+          if (err.response.status === 400) {
+            this.$message.error('登录失败，手机或验证码错误')
+          }
+        })
     },
 
     // 获取验证码
