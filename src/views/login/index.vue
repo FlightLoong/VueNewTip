@@ -14,11 +14,27 @@
               <el-input v-model="form.code"></el-input>
             </el-col>
             <el-col :span="4" :offset="1">
-              <el-button @click="getCode">发送验证码</el-button>
+              <el-button
+                @click="getCode"
+                :disabled="!!codeTimer"
+              >{{codeTimer ? `剩余${codeSecond}秒` : `发送验证码`}}</el-button>
             </el-col>
           </el-form-item>
+          <el-form-item prop="agree">
+            <el-checkbox v-model="form.agree"/>
+            <span class="loginAgree">
+              我已阅读并同意
+              <a href="">用户协议</a>和
+              <a href="">隐私条款</a>
+            </span>
+          </el-form-item>
           <el-form-item>
-            <el-button class="login" :loading="loginLoading" type="primary" @click="handleLogin">立即登录</el-button>
+            <el-button
+              class="login"
+              :loading="loginLoading"
+              type="primary"
+              @click="handleLogin"
+            >立即登录</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -29,6 +45,7 @@
 <script>
 import axios from 'axios'
 import '@/vendors/gt.js'
+const initCodeSeconds = 60
 
 export default {
   name: 'AppLogin',
@@ -37,8 +54,9 @@ export default {
       form: {
         mobile: '18361261959',
         code: '',
-        captchaObj: null // 通过 initGeetest 得到的极验验证码对象
+        agree: ''
       },
+      captchaObj: null, // 通过 initGeetest 得到的极验验证码对象
       rules: {
         mobile: [
           { required: true, message: '请输入手机号码', trigger: 'blur' },
@@ -47,9 +65,15 @@ export default {
         code: [
           { required: true, message: '请输入验证码', trigger: 'blur' },
           { len: 6, message: '验证码错误', trigger: 'blur' }
+        ],
+        agree: [
+          { required: true, message: '请同意用户协议', trigger: 'change' },
+          { pattern: /true/, message: '请同意用户协议', trigger: 'change' }
         ]
       },
-      loginLoading: false
+      loginLoading: false,
+      codeTimer: null, // 每秒倒计时时间
+      codeSecond: initCodeSeconds // 倒计时时间
     }
   },
   methods: {
@@ -67,6 +91,7 @@ export default {
       })
     },
 
+    // 登录的逻辑方法
     login () {
       axios({
         method: 'post',
@@ -93,6 +118,19 @@ export default {
 
     // 获取验证码
     getCode: function () {
+      // 对单个属性进行校验，验证手机号是否正确
+      this.$refs['ruleForm'].validateField('mobile', errorMessage => {
+        if (errorMessage.trim().length > 0) {
+          return
+        }
+
+        // 如果手机号正确，初始化验证码操作
+        this.showGeetest()
+      })
+    },
+
+    // 获取验证码逻辑方法
+    showGeetest () {
       const { mobile } = this.form
 
       if (this.captchaObj) {
@@ -117,10 +155,10 @@ export default {
         }, (captchaObj) => {
           this.captchaObj = captchaObj
           // 这里可以调用验证实例 captchaObj 的实例方法
-          captchaObj.onReady(function () {
+          captchaObj.onReady(() => {
             // 第二步：验证预判定，由客户端完成，实现初步预检测
             captchaObj.verify()
-          }).onSuccess(function () {
+          }).onSuccess(() => {
             // 第三步：核心验证过程
             const {
               geetest_challenge: challenge,
@@ -139,12 +177,25 @@ export default {
               }
             }).then((res) => {
               console.log(res.data)
+              this.codeCountDown()
             })
           }).onError(function () {
             console.log('验证失败了……')
           })
         })
       })
+    },
+
+    // 倒计时
+    codeCountDown () {
+      this.codeTimer = window.setInterval(() => {
+        this.codeSecond--
+        if (this.codeSecond <= 0) {
+          this.codeSecond = initCodeSeconds
+          this.codeTimer = null
+          window.clearInterval(this.codeTimer)
+        }
+      }, 1000)
     }
   }
 }
@@ -181,6 +232,15 @@ export default {
 
       .login {
         width: 100%;
+      }
+
+      .loginAgree {
+        color: #999;
+        margin-left: 8px;
+
+        a {
+          color: #409eff;
+        }
       }
     }
   }
