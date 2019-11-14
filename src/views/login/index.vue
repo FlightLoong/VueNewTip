@@ -18,7 +18,7 @@
             </el-col>
           </el-form-item>
           <el-form-item>
-            <el-button class="login" type="primary" @click="handleLogin">立即登录</el-button>
+            <el-button class="login" :loading="loginLoading" type="primary" @click="handleLogin">立即登录</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -48,14 +48,17 @@ export default {
           { required: true, message: '请输入验证码', trigger: 'blur' },
           { len: 6, message: '验证码错误', trigger: 'blur' }
         ]
-      }
+      },
+      loginLoading: false
     }
   },
   methods: {
     handleLogin () {
+      this.loginLoading = true
       // 对表单进行验证
       this.$refs['ruleForm'].validate((valid) => {
         if (!valid) {
+          this.loginLoading = false
           return
         }
 
@@ -78,9 +81,12 @@ export default {
         this.$router.push({
           name: 'home'
         })
+
+        this.loginLoading = false
       }).catch(err => {
         if (err.response.status === 400) {
           this.$message.error('登录失败，手机或验证码错误')
+          this.loginLoading = false
         }
       })
     },
