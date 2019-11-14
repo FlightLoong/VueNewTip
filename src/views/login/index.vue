@@ -16,7 +16,7 @@
             <el-col :span="4" :offset="1">
               <el-button
                 @click="getCode"
-                :disabled="!!codeTimer"
+                :disabled="!!codeTimer || codeLoding"
               >{{codeTimer ? `剩余${codeSecond}秒` : `发送验证码`}}</el-button>
             </el-col>
           </el-form-item>
@@ -73,7 +73,9 @@ export default {
       },
       loginLoading: false,
       codeTimer: null, // 每秒倒计时时间
-      codeSecond: initCodeSeconds // 倒计时时间
+      codeSecond: initCodeSeconds, // 倒计时时间
+      secondMobile: '',
+      codeLoding: false
     }
   },
   methods: {
@@ -125,7 +127,21 @@ export default {
         }
 
         // 如果手机号正确，初始化验证码操作
-        this.showGeetest()
+        if (this.captchaObj) {
+          // 如果用户输入的手机号和之前的手机号不一致，需要基于最新的手机号重新初始化
+          // 否则，就直接 verify 显示
+          if (this.form.mobile !== this.secondMobile) {
+            // 重新初始化验证码插件
+            document.body.removeChild(document.querySelector('.geetest_panel'))
+            this.showGeetest()
+          } else {
+            // 两次输入手机一致，直接显示
+            this.captchaObj.verify()
+          }
+        } else {
+          // 第一次初始化验证码插件
+          this.showGeetest()
+        }
       })
     },
 
@@ -133,14 +149,17 @@ export default {
     showGeetest () {
       const { mobile } = this.form
 
-      if (this.captchaObj) {
-        return this.captchaObj.verify()
-      }
+      // 初始化验证码期间，禁用按钮，防止多次触发
+      this.codeLoding = true
+
+      // if (this.captchaObj) {
+      //   return this.captchaObj.verify()
+      // }
 
       // 第一步：获取验证参数
       axios({
         method: 'get',
-        url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
+        url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${this.form.mobile}`
       }).then(res => {
         console.log(res.data)
         const data = res.data.data
@@ -156,8 +175,10 @@ export default {
           this.captchaObj = captchaObj
           // 这里可以调用验证实例 captchaObj 的实例方法
           captchaObj.onReady(() => {
+            this.secondMobile = this.form.mobile
             // 第二步：验证预判定，由客户端完成，实现初步预检测
             captchaObj.verify()
+            this.codeLoding = false
           }).onSuccess(() => {
             // 第三步：核心验证过程
             const {
