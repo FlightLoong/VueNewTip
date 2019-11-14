@@ -5,11 +5,11 @@
         <img src="./logo_index.png" alt="黑马头条">
       </div>
       <div class="login-body">
-        <el-form ref="form" :model="form">
-          <el-form-item class="mobile">
+        <el-form :model="form" :rules="rules" ref="ruleForm">
+          <el-form-item class="mobile" prop="mobile">
             <el-input v-model="form.mobile"></el-input>
           </el-form-item>
-          <el-form-item>
+          <el-form-item prop="code">
             <el-col :span="16">
               <el-input v-model="form.code"></el-input>
             </el-col>
@@ -38,31 +38,51 @@ export default {
         mobile: '18361261959',
         code: '',
         captchaObj: null // 通过 initGeetest 得到的极验验证码对象
+      },
+      rules: {
+        mobile: [
+          { required: true, message: '请输入手机号码', trigger: 'blur' },
+          { len: 11, message: '手机号码错误', trigger: 'blur' }
+        ],
+        code: [
+          { required: true, message: '请输入验证码', trigger: 'blur' },
+          { len: 6, message: '验证码错误', trigger: 'blur' }
+        ]
       }
     }
   },
   methods: {
     handleLogin () {
+      // 对表单进行验证
+      this.$refs['ruleForm'].validate((valid) => {
+        if (!valid) {
+          return
+        }
+
+        // 验证通过，执行登录
+        this.login()
+      })
+    },
+
+    login () {
       axios({
         method: 'post',
         url: `http://ttapi.research.itcast.cn/mp/v1_0/authorizations`,
         data: this.form
-      })
-        .then(res => {
-          this.$message({
-            message: '登录成功',
-            type: 'success'
-          })
+      }).then(res => {
+        this.$message({
+          message: '登录成功',
+          type: 'success'
+        })
 
-          this.$router.push({
-            name: 'home'
-          })
+        this.$router.push({
+          name: 'home'
         })
-        .catch(err => {
-          if (err.response.status === 400) {
-            this.$message.error('登录失败，手机或验证码错误')
-          }
-        })
+      }).catch(err => {
+        if (err.response.status === 400) {
+          this.$message.error('登录失败，手机或验证码错误')
+        }
+      })
     },
 
     // 获取验证码
